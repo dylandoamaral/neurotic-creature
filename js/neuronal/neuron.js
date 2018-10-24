@@ -33,17 +33,17 @@ class Neuron {
     link(layer) {
         let neurons = layer.neurons;
         for (let neuron of neurons) {
-            let link = new Link(neuron, this, randBtwFloat(-20, 20));
+            let link = new Link(neuron, this, randBtwFloat(-50, 50));
             this.links = [...this.links, link];
         }
     }
 
     activate() {
-        var sum = 0;
+        var sum = this.biases;
         for (let link of this.links) {
             sum += link.weight * link.from.value;
         }
-        this.value = logistic_function(sum) + this.biases;
+        this.value = logistic_function(sum);
     }
 
     serialize(){

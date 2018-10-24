@@ -7,8 +7,7 @@
 
 class Food {
     constructor() {
-        this.x = randBtw(0, boardInformations.width + 1);
-        this.y = randBtw(0, boardInformations.height + 1);
+        this.move();
     }
 
     draw(context) {
@@ -17,5 +16,10 @@ class Food {
         context.arc(this.x, this.y, 4, 0, 2 * Math.PI);
         context.fillStyle = 'grey';
         context.fill();
+    }
+
+    move(){
+        this.x = randBtw(0, boardInformations.width + 1);
+        this.y = randBtw(0, boardInformations.height + 1);
     }
 }

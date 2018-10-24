@@ -11,40 +11,47 @@ class Neurotic {
             phenotypePerGeneration: 100,
             boardSize: [500, 500],
             timePerGeneration: 15000,
-            timePerFood: 50
+            foodInBoard: 50
         }, options);
 
         this.lastUpdate = Date.now();
         this.generationTime = this.options.timePerGeneration;
         this.generationTimeCurr = 0;
 
-        this.foods = [];
-        this.spawnFoodTimeCurr = 0;
-        this.spawnFoodTime = this.options.timePerFood;
-
         this.board = new Board(this.options.boardSize[0], this.options.boardSize[1]);
+
+        this.fillFood();
+
+        this.creatures = [];
+        for (let i = 0; i < this.options.phenotypePerGeneration; i++) {
+            this.creatures = [...this.creatures, new Creature()];
+        }
+
+        window.setInterval(() => {
+            this.tick()
+        }, 10);
+    }
+
+    fillFood(){
+        this.foods = [];
+        for (let i = 0; i < this.options.foodInBoard; i++) {
+            this.foods = [...this.foods, new Food()];
+        }
+
         boardInformations = Object.assign({}, {
             foods: this.foods
         }, boardInformations);
-
-        this.creatures = [];
-        for(let i = 0; i < this.options.phenotypePerGeneration; i++){
-            this.creatures = [...this.creatures, new Creature()];
-        }
-        
-        window.setInterval(() => {
-            this.tick() 
-        } , 10);
     }
 
-    nextGeneration(){
+    nextGeneration() {
         let nextCreatures = [];
-        this.foods = [];
 
-        this.creatures = this.creatures.filter(c => c.score > 0)
+        this.fillFood();
         
-        console.log(`Total score : ${this.creatures.reduce((total, creature) => total + creature.score, 0)}`);
+        this.creatures = this.creatures.filter(c => c.score > 0)
 
+        console.log(`Total score : ${this.creatures.reduce((total, creature) => total + creature.score, 0)}`);
+        
         this.creatures.sort((a, b) =>
             a.score - b.score); // Baddest to Best
 
@@ -64,7 +71,7 @@ class Neurotic {
 
     makeChildren() {
         let father = this.rankSelection();
-        if(!father)return new Creature(); // Case where nobody is selected
+        if (!father) return new Creature(); // Case where nobody is selected
         let mother = this.rankSelection();
         let children = new Creature();
 
@@ -95,61 +102,49 @@ class Neurotic {
     }
 
     update(dt) {
-        this.spawnFoodTimeCurr += dt;
         this.generationTimeCurr += dt;
 
-        if(this.generationTimeCurr > this.generationTime || this.everybodyIsDead()){
-            this.nextGeneration();
+        if (this.generationTimeCurr > this.generationTime) {
             this.generationTimeCurr = 0;
+            this.nextGeneration();
         }
 
-        if(this.spawnFoodTimeCurr > this.spawnFoodTime){
-            this.foods = [...this.foods, new Food()];
-
-            boardInformations = Object.assign({}, boardInformations, {
-                foods: this.foods
-            });
-            this.spawnFoodTimeCurr = 0;
-        }
-
-        for(let creature of this.creatures){
+        for (let creature of this.creatures) {
             creature.update(dt);
         }
 
         this.eat(dt);
     }
 
-    eat(dt){
-        for(var creature of this.creatures){
-            for(var food of this.foods){
+    eat(dt) {
+        for (var creature of this.creatures) {
+            for (var food of this.foods) {
                 let distance = Math.sqrt(Math.pow(creature.x - food.x, 2) + Math.pow(creature.y - food.y, 2));
-                if(distance < creature.r){
+                if (distance < creature.r) {
                     creature.score++;
-                    this.foods.splice(this.foods.indexOf(food), 1);
+                    food.move();
                 }
             }
         }
     }
 
-    draw(dt){
+    draw(dt) {
         this.board.clear();
 
-        for(let food of this.foods){
+        for (let food of this.foods) {
             food.draw(this.board.context);
         }
-        for(let creature of this.creatures){
+        for (let creature of this.creatures) {
             creature.draw(this.board.context);
         }
 
         this.board.draw();
     }
-
-    everybodyIsDead(){
-        for(let creature of this.creatures){
-            if(!creature.isDead) return false;
-        }
-        return true;
-    }
 }
 
-new Neurotic();
+new Neurotic({
+    phenotypePerGeneration: 200,
+    boardSize: [500, 500],
+    timePerGeneration: 10000,
+    foodInBoard: 100
+});

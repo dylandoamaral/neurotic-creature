@@ -18,13 +18,14 @@ class Creature {
 
         this.isDead = false;
 
-        this.brain = new NeuronalNetwork(7, [5, 5], 3);
+        this.brain = new NeuronalNetwork(7, [4, 4], 3);
     }
 
     hitWall() {
         if (this.x < this.r || this.x > boardInformations.width - this.r ||
             this.y < this.r || this.y > boardInformations.height - this.r) {
             this.isDead = true;
+            this.score -= 2;
         }
     }
 

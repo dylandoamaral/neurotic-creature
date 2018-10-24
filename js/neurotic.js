@@ -15,14 +15,14 @@ class Neurotic {
         }, options);
 
         this.lastUpdate = Date.now();
-        this.generationTime = timePerGeneration;
+        this.generationTime = this.options.timePerGeneration;
         this.generationTimeCurr = 0;
 
         this.foods = [];
         this.spawnFoodTimeCurr = 0;
-        this.spawnFoodTime = timePerFood;
+        this.spawnFoodTime = this.options.timePerFood;
 
-        this.board = new Board(boardSize[0], boardSize[1]);
+        this.board = new Board(this.options.boardSize[0], this.options.boardSize[1]);
         boardInformations = Object.assign({}, {
             foods: this.foods
         }, boardInformations);

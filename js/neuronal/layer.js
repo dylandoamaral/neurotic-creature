@@ -19,10 +19,10 @@ class Layer {
         this.nextLayer = null;
     }
 
-    inherite(father, mother) {
+    inherite(parent) {
         let i = 0;
         for(let neuron of this.neurons){
-            neuron.inherite(father.neurons[i], mother.neurons[i]);
+            neuron.inherite(parent.neurons[i]);
             i++;
         }
     }

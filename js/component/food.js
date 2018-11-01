@@ -14,12 +14,12 @@ class Food {
         // Round form
         context.beginPath();
         context.arc(this.x, this.y, 4, 0, 2 * Math.PI);
-        context.fillStyle = 'grey';
+        context.fillStyle = 'rgb(100, 120, 210)';
         context.fill();
     }
 
     move(){
-        this.x = randBtw(0, boardInformations.width + 1);
-        this.y = randBtw(0, boardInformations.height + 1);
+        this.x = randBtw(10, arenaInformations.width - 10);
+        this.y = randBtw(10, arenaInformations.height - 10);
     }
 }

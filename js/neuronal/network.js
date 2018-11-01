@@ -15,17 +15,16 @@ class NeuronalNetwork {
         this.setup();
     }
 
-    inherite(father, mother) {
-        let fatherInformations = father.serialize();
-        let motherInformations = mother.serialize();
+    inherite(parent, mother) {
+        let parentInformations = parent.serialize();
 
         this.setup();
 
-        this.layers.input.inherite(fatherInformations.input, motherInformations.input);
+        this.layers.input.inherite(parentInformations.layers[0]);
         for (let i = 0; i < this.hiddenLength; i++) {
-            this.layers.hidden[i].inherite(fatherInformations.hidden[i], motherInformations.hidden[i]);
+            this.layers.hidden[i].inherite(parentInformations.layers[i + 1]);
         }
-        this.layers.output.inherite(fatherInformations.output, motherInformations.output);
+        this.layers.output.inherite(parentInformations.layers[parentInformations.layers.length - 1]);
     }
 
     setup() {
@@ -52,11 +51,11 @@ class NeuronalNetwork {
 
         for (let neuron of this.layers.input.neurons) {
             neuron.value = inputs[i];
-            i++
+            i++;
         }
 
         for (let i = 0; i < this.hiddenLength; i++) {
-            this.layers.hidden[i].activate()
+            this.layers.hidden[i].activate();
         }
         this.layers.output.activate();
 
@@ -64,15 +63,15 @@ class NeuronalNetwork {
     }
 
     serialize() {
-        var hidden = []
+        var layers = [];
+        layers = [...layers, this.layers.input.serialize()]
         for (let i = 0; i < this.hiddenLength; i++) {
-            hidden = [...hidden, this.layers.hidden[i].serialize()]
+            layers = [...layers, this.layers.hidden[i].serialize()]
         }
+        layers = [...layers, this.layers.output.serialize()]
 
         var informations = {
-            input: this.layers.input.serialize(),
-            hidden: hidden,
-            output: this.layers.output.serialize()
+            layers: layers
         };
 
         return informations;

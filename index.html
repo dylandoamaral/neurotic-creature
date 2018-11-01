@@ -12,22 +12,58 @@ Copyright 2018 - dylandoamaral
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Neuronal & Genetic creature</title>
+    <link rel="stylesheet" href="style.css" />
+    <title>Neurotic creature</title>
 </head>
 
 <body>
-    <div id="neurotic"></div>
+    <span class="me">Made by Dylan DO AMARAL</span>
+    <div class="neurotic">
+
+        <div class="board">
+            <canvas class="board-arena"></canvas>
+            <div class="board-dashboard">
+                <span class="board-generation"></span>
+                <div class="board-controllers">
+                    <button class="board-button board-start"></button>
+                    <button class="board-button board-stop"></button>
+                    <button class="board-button board-reset"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="line"></div>
+        
+        <div class="creature">
+            <span class="creature-title">Best creature</span>
+            <div class="creature-information">
+                <span class="creature-score">Score : 0</span>
+                <span class="creature-generation">Generation : 0</span>
+            </div>
+            <canvas class="creature-network"></canvas>
+            <canvas class="creature-arena"></canvas>
+            <button class="creature-try">Test</button>
+        </div>
+
+    </div>
 </body>
-    <script src="js/utils.js"></script>
 
-    <script src="js/neuronal/link.js"></script>
-    <script src="js/neuronal/neuron.js"></script>
-    <script src="js/neuronal/layer.js"></script>
-    <script src="js/neuronal/network.js"></script>
+<script src="js/utils.js"></script>
+ 
+<script src="js/neuronal/link.js"></script>
+<script src="js/neuronal/neuron.js"></script>
+<script src="js/neuronal/layer.js"></script>
+<script src="js/neuronal/network.js"></script>
 
-    <script src="js/component/board.js"></script>
-    <script src="js/component/creature.js"></script>
-    <script src="js/component/food.js"></script>
+<script src="js/neuronal/graphic/neuron.graphic.js"></script>
+<script src="js/neuronal/graphic/layer.graphic.js"></script>
+<script src="js/neuronal/graphic/network.graphic.js"></script>
 
-    <script src="js/neurotic.js"></script>
+<script src="js/component/arena.js"></script>
+<script src="js/component/tester.js"></script>
+<script src="js/component/creature.js"></script>
+<script src="js/component/food.js"></script>
+
+<script src="js/neurotic.js"></script>
+
 </html>

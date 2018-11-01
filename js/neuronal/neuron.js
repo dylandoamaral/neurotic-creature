@@ -8,24 +8,18 @@
 class Neuron {
     constructor() {
         this.biases = randBtwFloat(-1, 1);
+
         this.value = 0;
 
         this.links = [];
     }
 
-    inherite(father, mother) {
-        if(randBtw(0, 1000) != 0){
-            if(randBtw(0, 2) == 0) this.biases = father.biases;
-            else this.biases = mother.biases;
-        }
-
-
+    inherite(parent) {
+        if(randBtw(0, 1000) != 0) this.biases = parent.biases;
+        
         let i = 0;
         for(let link of this.links){
-            if(randBtw(0, 1000) != 0){
-                if(randBtw(0, 2) == 0) link.weight = father.weights[i];
-                else link.weight = mother.weights[i];
-            }
+            if(randBtw(0, 1000) != 0) link.weight = parent.weights[i];
             i++;
         }
     }
@@ -33,7 +27,7 @@ class Neuron {
     link(layer) {
         let neurons = layer.neurons;
         for (let neuron of neurons) {
-            let link = new Link(neuron, this, randBtwFloat(-50, 50));
+            let link = new Link(neuron, this, randBtwFloat(-5, 5));
             this.links = [...this.links, link];
         }
     }

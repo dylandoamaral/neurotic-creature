@@ -20,7 +20,9 @@ When I started that project I was a bit lazy about sensors. First of all I was g
 
 That's why I decided to change input by putting sensors for my creatures. Now, each creature have 5 sensors which can detect food if there isn't food, sensor return 1 else they return a number between 0 and 1 according to the food distance. You can find find the sensor code in sensor.js.
 
-Here is a schema before and after the changement
+Here is a schema before and after the changement :
+
+![Image of Sensors](https://nsa39.casimages.com/img/2018/11/04/181104060412106234.png)
 
 ## Last project
 

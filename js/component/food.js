@@ -7,19 +7,20 @@
 
 class Food {
     constructor() {
+        this.position = new Point();
         this.move();
     }
 
     draw(context) {
         // Round form
         context.beginPath();
-        context.arc(this.x, this.y, 4, 0, 2 * Math.PI);
+        context.arc(this.position.x, this.position.y, 4, 0, 2 * Math.PI);
         context.fillStyle = 'rgb(100, 120, 210)';
         context.fill();
     }
 
     move(){
-        this.x = randBtw(10, arenaInformations.width - 10);
-        this.y = randBtw(10, arenaInformations.height - 10);
+        this.position.x = randBtwInt(10, arenaInformations.width - 10);
+        this.position.y = randBtwInt(10, arenaInformations.height - 10);
     }
 }

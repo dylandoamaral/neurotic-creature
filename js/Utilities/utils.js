@@ -5,11 +5,30 @@
  * Copyright 2018 - dylandoamaral
  */
 
-// min <= n < max
-function randBtw(min, max) {
+ var debug = false;
+
+/**
+* @param {number} max 
+* @returns {number} a random int number between [0;max[
+*/
+function randInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+/**
+ * @param {number} min
+ * @param {number} max 
+ * @returns {number} a random int number between [min;max[
+ */
+function randBtwInt(min, max) {
     return Math.floor(Math.random() * (max - min) + min)
 }
 
+/**
+ * @param {number} min
+ * @param {number} max 
+ * @returns {number} a random float number between [min;max[
+ */
 function randBtwFloat(min, max) {
     return Math.random() * (max - min) + min;
 }
@@ -24,5 +43,5 @@ function radToDeg() {
 
 // https://en.wikipedia.org/wiki/Logistic_function
 function logistic_function(x) {
-    return 1 / (1 + Math.exp(-x));
+    return 1 / (1 + Math.exp(x));
 }

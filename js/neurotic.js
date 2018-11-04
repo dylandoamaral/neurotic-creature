@@ -8,6 +8,20 @@
 class Neurotic {
     constructor(options = {}) {
         this.options = Object.assign({}, {
+            network: {
+                mutationWeightRatio: 0.1,
+                mutationWeightRandomRatio: 0.1,
+                mutationNodeRatio: 0.03,
+                mutationConnectionRatio: 0.05,
+                disableRatio: 0.75,
+                distanceFactor: [1.0, 1.0, 0.4]
+            },
+            species: {
+                countDisparition: 10,
+                cleanseRatio: 0.35,
+                randomRatio: 0.5,
+                distanceTreshold: 3
+            },
             phenotypePerGeneration: 100,
             arenaSize: [500, 500],
             timePerGeneration: 15000,
@@ -36,26 +50,43 @@ class Neurotic {
             this.reset();
         });
 
-        /*Test initialisation*/
-        this.tester = new Tester(300, 300);
-
         /*Food initialisation*/
         this.fillFood();
 
         /*Creatures initialisation*/
-        this.creatures = [];
+        this.creatures = []; // networks without species
+        this.species = [];
+
         for (let i = 0; i < this.options.phenotypePerGeneration; i++) {
-            this.creatures = [...this.creatures, new Creature()];
+            let creature = new Creature(this.options.network);
+            creature.brain.mutation();
+            this.creatures = [...this.creatures, creature];
         }
 
         /*Network Graphic initialisation*/
-        this.bestCreature = this.creatures[0];
-        this.networkGraphic = new NetworkGraphic(400, 150, this.bestCreature.brain);
+        this.networkGraphic = new NetworkGraphic(document.querySelector('.analyser-network'), this.creatures[0].brain);
+        this.creatures[0].chosen = true;
         
+        this.divideInSpecies();
+
         this.lastUpdate = Date.now();
         window.setInterval(() => {
             this.tick()
         }, 10);
+    }
+
+    divideInSpecies() {
+        for (const creature of this.creatures) {
+            let added = false;
+            for (const species of this.species) {
+                if (creature.brain.distance(species.nominee.brain) < this.options.species.distanceTreshold) {
+                    species.creatures = [...species.creatures, creature];
+                    added = true;
+                    break;
+                }
+            }
+            if (added == false) this.species = [...this.species, new Species(creature)];
+        }
     }
 
     reset() {
@@ -64,14 +95,19 @@ class Neurotic {
 
         this.fillFood();
 
-        this.creatures = [];
+        this.creatures = []; // networks without species
+        this.species = [];
+
         for (let i = 0; i < this.options.phenotypePerGeneration; i++) {
-            this.creatures = [...this.creatures, new Creature()];
+            let creature = new Creature(this.options.network);
+            creature.brain.mutation();
+            this.creatures = [...this.creatures, creature];
         }
+        this.creatures[0].chosen = true;
+
+        this.divideInSpecies();
 
         this.arena.reset();
-
-        this.newBestCreature(this.creatures[0]);
     }
 
     fillFood() {
@@ -80,71 +116,88 @@ class Neurotic {
             this.foods = [...this.foods, new Food()];
         }
 
-        arenaInformations = Object.assign({}, {
+        arenaInformations = Object.assign({}, arenaInformations, {
             foods: this.foods
-        }, arenaInformations);
-    }
-
-    newBestCreature(creature) {
-        this.bestCreature = creature;
-        this.networkGraphic.setup(creature.brain);
-        document.querySelector(".creature-score").innerHTML = `Score : ${creature.score}`;
-        document.querySelector(".creature-generation").innerHTML = `Generation : ${this.arena.generationNumber}`;
+        });
     }
 
     nextGeneration() {
-        let nextCreatures = [];
+        let survivor = 0;
+        this.creatures = [];
 
         this.fillFood();
 
-        this.creatures = this.creatures.filter(c => c.score > 0)
-
-        console.log(`Total score : ${this.creatures.reduce((total, creature) => total + creature.score, 0)}`);
-        console.log(this.creatures);
-
-        this.creatures.sort((a, b) =>
-            b.score - a.score); // Best to Baddest
-
-        if(this.creatures.length > 0 && this.creatures[0].score >= this.bestCreature.score){
-            this.newBestCreature(this.creatures[0]);
+        for (const species of this.species) {
+            survivor += species.cleanse(this.options.species.cleanseRatio);
+            if (species.count > this.options.species.countDisparition) {
+                this.species.splice(this.species.indexOf(species), 1);
+                survivor--;
+            }
+        }
+        for (let i = survivor; i < (1 - this.options.species.randomRatio) * this.options.phenotypePerGeneration; i++) {
+            let creature = this.child();
+            creature.brain.mutation();
+            this.creatures = [...this.creatures, creature];
+        }
+        for (let i = (1 - this.options.species.randomRatio) * this.options.phenotypePerGeneration; i < this.options.phenotypePerGeneration; i++) {
+            let creature = new Creature(this.options.network);
+            creature.brain.mutation();
+            this.creatures = [...this.creatures, creature];
         }
 
-        let selected = (this.creatures.length < 3 * this.options.phenotypePerGeneration / 4) ? this.creatures.length : 3 * this.options.phenotypePerGeneration / 4;
-        for (let i = 0; i < selected; i++) {
-            let children = new Creature();
-            children.inherite(this.creatures[i], this.creatures[i]);
-            nextCreatures = [...nextCreatures, children];
-        }
-        for (let i = selected; i < this.options.phenotypePerGeneration; i++) {
-            let creature = new Creature();
-            nextCreatures = [...nextCreatures, creature]
-        }
-
-        this.creatures = nextCreatures;
+        this.divideInSpecies();
+        this.networkGraphic.assign(this.findBest().brain);
+        
         this.arena.increment();
     }
 
-    makeChildren() {
-        let father = this.rankSelection();
-        let children = new Creature();
+    child() {
+        let species = this.speciesSelection();
+        let father = this.selection(species);
+        let mother = this.selection(species);
+        let child = null;
 
-        if (father){
-            children.inherite(father, father)
-        }
-        return children;
+        if (father.brain.fitness < mother.brain.fitness) child = mother.child(father);
+        else child = father.child(mother);
+
+        return child;
     }
 
-    rankSelection() {
-        var total = 0;
-        for (let i = 0; i < this.creatures.length; i++) total += Math.pow(i, 3);
-        var rand = randBtw(0, total)
-        total = 0
-        for (let i = 0; i < this.creatures.length; i++) {
-            total += Math.pow(i, 3);
-            if (rand <= total) {
-                return this.creatures[i];
+    selection(species) {
+        let tmpCreatures = [];
+
+        for (const creature of species.creatures) {
+            for (let i = 0; i < creature.brain.fitness; i++) {
+                tmpCreatures = [...tmpCreatures, creature];
             }
         }
+
+        return tmpCreatures[randInt(tmpCreatures.length)];
+    }
+
+    speciesSelection() {
+        let tmpSpecies = [];
+
+        for (const species of this.species) {
+            for (let i = 0; i < species.creatures.length; i++) {
+                tmpSpecies = [...tmpSpecies, species];
+            }
+        }
+
+        return tmpSpecies[randInt(tmpSpecies.length)];
+    }
+
+    findBest(){
+        let alpha = null;
+        for (const species of this.species) {
+            for (const creature of species.creatures) {
+                if(creature.previousFitness){
+                    if(!alpha || creature.previousFitness > alpha.previousFitness) alpha = creature;
+                }
+            }
+        }
+        alpha.chosen = true;
+        return alpha;
     }
 
     tick() {
@@ -157,31 +210,44 @@ class Neurotic {
     }
 
     update(dt) {
-        if(this.pause) return;
+        if (this.pause) return;
         this.generationTimeCurr += dt;
 
-        if (this.generationTimeCurr > this.generationTime) {
+        if (this.generationTimeCurr > this.generationTime || this.everybodyIsDead()) {
             this.generationTimeCurr = 0;
             this.nextGeneration();
         }
 
-        for (let creature of this.creatures) {
-            creature.update(dt);
+        for (const species of this.species) {
+            for (const creature of species.creatures) {
+                creature.update(dt);
+            }
         }
 
         this.eat(dt);
     }
 
     eat(dt) {
-        for (var creature of this.creatures) {
-            for (var food of this.foods) {
-                let distance = Math.sqrt(Math.pow(creature.x - food.x, 2) + Math.pow(creature.y - food.y, 2));
-                if (distance < creature.r) {
-                    creature.score++;
-                    food.move();
+        for (const species of this.species) {
+            for (const creature of species.creatures) {
+                for (const food of this.foods) {
+                    let distance = Math.sqrt(Math.pow(creature.position.x - food.position.x, 2) + Math.pow(creature.position.y - food.position.y, 2));
+                    if (distance < creature.r) {
+                        creature.feed();
+                        food.move();
+                    }
                 }
             }
         }
+    }
+
+    everybodyIsDead() {
+        for (const species of this.species) {
+            for (const creature of species.creatures) {
+                if (creature.isDead == false) return false;
+            }
+        }
+        return true;
     }
 
     draw(dt) {
@@ -190,21 +256,33 @@ class Neurotic {
         for (let food of this.foods) {
             food.draw(this.arena.context);
         }
-        for (let creature of this.creatures) {
-            creature.draw(this.arena.context);
+        for (const species of this.species) {
+            for (const creature of species.creatures) {
+                creature.draw(this.arena.context);
+            }
         }
-        
-        /**
-        this.tester.clear();
 
-        this.tester.draw();
-         */
+        this.networkGraphic.draw();
     }
 }
 
-new Neurotic({
-    phenotypePerGeneration: 40,
-    arenaSize: [400, 400],
-    timePerGeneration: 8000,
-    foodInArena: 20
+neurotic = new Neurotic({
+    network: {
+        mutationWeightRatio: 0.5,
+        mutationWeightRandomRatio: 0.1,
+        mutationNodeRatio: 0.03,
+        mutationConnectionRatio: 0.05,
+        disableRatio: 0.75,
+        distanceFactor: [1.0, 1.0, 0.4]
+    },
+    species: {
+        countDisparition: 10,
+        cleanseRatio: 0.35,
+        randomRatio: 0.05,
+        distanceTreshold: 3
+    },
+    phenotypePerGeneration: 60,
+    arenaSize: [550, 550],
+    timePerGeneration: 20000,
+    foodInArena: 30
 });

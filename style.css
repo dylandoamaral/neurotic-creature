@@ -50,20 +50,14 @@ body{
     background-color: black;
 }
 
-.creature{
+.analyser{
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.creature-title{
+.analyser-network{
     margin: 10px;
-    font-size: 24px;
-}
-
-.creature-information{
-    margin: 10px;
-    width: 400px;
     display: flex;
     flex-direction: row;
     align-items: center;

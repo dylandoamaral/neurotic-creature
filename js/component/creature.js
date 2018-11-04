@@ -6,30 +6,75 @@
  */
 
 class Creature {
-    constructor() {
-        this.x = randBtw(10, arenaInformations.width - 10);
-        this.y = randBtw(10, arenaInformations.height - 10);
+    constructor(options) {
+        this.options = options;
+
+        this.position = new Point();
+        this.position.x =  arenaInformations.width/2;
+        this.position.y = arenaInformations.height/2;
+        this.vx = 0;
+        this.vy = 0;
+
+        this.rotation =0;
+
         this.r = 6;
 
-        this.speed = 4;
-        this.rotation = 0;
+        this.speed = 2;
 
-        this.score = 0;
 
         this.isDead = false;
 
-        this.brain = new NeuronalNetwork(5, [6], 3);
+        this.scoreTime = 500;
+        this.scoreTimeCurr = 0;
+
+        this.maxFood = 15;
+        this.food = this.maxFood;
+
+        this.brain = new Network(5, 3, this.options);
+        this.brain.fitness = 1;
+
+        this.chosen = false;
+
+        this.fov = 50;
+        this.sensors = [];
+        for (let i = 4; i >= 0; i--) {
+            this.sensors = [...this.sensors, new Sensor(this.position, 80, this.fov / 2 * i - this.fov)];
+        }
+    }
+
+    reset() {
+        this.position.x =  arenaInformations.width/2;
+        this.position.y = arenaInformations.height/2;
+        this.rotation = 0;
+
+        this.isDead = false;
+
+        this.food = this.maxFood;
+        this.scoreTimeCurr = 0;
+
+        this.previousFitness = this.brain.fitness;
+        this.brain.fitness = 1;
+
+        this.chosen = false;
+
+        this.sensors = [];
+        for (let i = 4; i >= 0; i--) {
+            this.sensors = [...this.sensors, new Sensor(this.position, 80, this.fov / 2 * i - this.fov)];
+        }
     }
 
     hitWall() {
-        /**if (this.x < this.r || this.x > arenaInformations.width - this.r ||
-            this.y < this.r || this.y > arenaInformations.height - this.r) {
+        /** 
+        if (this.position.x < this.r || this.position.x > arenaInformations.width - this.r ||
+            this.position.y < this.r || this.position.y > arenaInformations.height - this.r) {
             this.isDead = true;
-        } */
-        if (this.x > arenaInformations.width) this.x = 0;
-        else if (this.x < 0) this.x = arenaInformations.width;
-        if (this.y > arenaInformations.height) this.y = 0;
-        else if (this.y < 0) this.y = arenaInformations.height;
+        } 
+        */
+        if (this.position.x > arenaInformations.width) this.position.x = 0;
+        else if (this.position.x < 0) this.position.x = arenaInformations.width;
+        if (this.position.y > arenaInformations.height) this.position.y = 0;
+        else if (this.position.y < 0) this.position.y = arenaInformations.height;
+
     }
 
     distanceFood() {
@@ -37,30 +82,45 @@ class Creature {
         var foodMin;
 
         for (var food of arenaInformations.foods) {
-            let distance = Math.sqrt(Math.pow(this.x - food.x, 2) + Math.pow(this.y - food.y, 2));
+            let distance = Math.sqrt(Math.pow(this.position.x - food.position.x, 2) + Math.pow(this.position.y - food.position.y, 2));
             if (distance < distanceMin) {
                 distanceMin = distance;
                 foodMin = food;
             }
         }
 
-        if (foodMin) return [foodMin.x / arenaInformations.width, foodMin.y / arenaInformations.height];
-        else return [9999, 9999]
+        if (foodMin) {
+            return [(this.position.x - foodMin.position.x) / distanceMin, (this.position.y - foodMin.position.y) / distanceMin];
+        }
+        else {
+            return [9999, 9999];
+        }
     }
 
     distanceWalls() {
         return [
-            (this.x - this.r) / arenaInformations.width, //left
-            (arenaInformations.width - this.x - this.r) / arenaInformations.width, //right
-            (this.y - this.r) / arenaInformations.height, //top
-            (arenaInformations.height - this.y - this.r) / arenaInformations.height //bottom
+            (this.position.x - this.r) / arenaInformations.width, //left
+            (arenaInformations.width - this.position.x - this.r) / arenaInformations.width, //right
+            (this.position.y - this.r) / arenaInformations.height, //top
+            (arenaInformations.height - this.position.y - this.r) / arenaInformations.height //bottom
         ];
     }
 
     update(dt) {
         if (this.isDead) return;
 
-        this.forward();
+        this.scoreTimeCurr += dt;
+        if (this.scoreTimeCurr > this.scoreTime) {
+            this.brain.fitness++;
+            this.food--;
+            this.scoreTimeCurr = 0;
+            if (this.food <= 0) this.isDead = true;
+        }
+
+        for (const sensor of this.sensors) {
+            sensor.detect();
+        }
+
         this.think();
 
         this.hitWall();
@@ -69,40 +129,62 @@ class Creature {
     think() {
         var inputs = [];
 
-        inputs = [...inputs, (this.rotation % 360) / 360];
-        inputs = [...inputs, this.x / arenaInformations.width];
-        inputs = [...inputs, this.y / arenaInformations.height];
+        /**
+        inputs = [...inputs, this.vx];
+        inputs = [...inputs, this.vy];
+        inputs = [...inputs, (this.distanceFood()[0])];
+        inputs = [...inputs, (this.distanceFood()[1])];
+        
+        inputs = [...inputs, (this.distanceWalls()[0])];
+        inputs = [...inputs, (this.distanceWalls()[1])];
+        inputs = [...inputs, (this.distanceWalls()[2])];
+        inputs = [...inputs, (this.distanceWalls()[3])];
+        */
+
+        for (const sensor of this.sensors) {
+            inputs = [...inputs, sensor.value];
+        }
+
         //for (let distance of this.distanceWalls()) inputs = [...inputs, distance];
-        for (let foodPos of this.distanceFood()) inputs = [...inputs, foodPos];
 
         switch (this.brain.predict(inputs)) {
             case 0:
-                break;
-            case 1:
-                this.turn(15);
-                break;
-            case 2:
                 this.turn(-15);
                 break;
+            case 1:
+                this.forward();
+                break;
+            case 2:
+                this.turn(15);
+                break;
             default:
-                console.error("wrong output")
+
         };
     }
 
     turn(angle) {
         this.rotation += angle;
+        for (const sensor of this.sensors) {
+            sensor.rotate(angle);
+        }
     }
 
     forward() {
-        let vx = this.speed * Math.cos(this.rotation * degToRad());
-        let vy = this.speed * Math.sin(this.rotation * degToRad());
+        this.vx = Math.cos(this.rotation * degToRad());
+        this.vy = Math.sin(this.rotation * degToRad());
 
-        this.x += vx;
-        this.y += vy;
+        this.position.x += this.speed * this.vx;
+        this.position.y += this.speed * this.vy;
+
+        for (const sensor of this.sensors) {
+            sensor.forward(this.position, this.rotation);
+        }
     }
 
-    inherite(father, mother) {
-        this.brain.inherite(father.brain, mother.brain);
+    child(partner) {
+        let child = new Creature(this.options);
+        child.brain = this.brain.child(partner.brain);
+        return child;
     }
 
     draw(context) {
@@ -110,13 +192,25 @@ class Creature {
 
         // Round form
         context.beginPath();
-        context.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-        if (!this.isDead) context.fillStyle = 'black';
-        else context.fillStyle = 'rgb(240, 240, 240)';
+        context.arc(this.position.x, this.position.y, this.r, 0, 2 * Math.PI);
+        if (!this.chosen) {
+            if (!this.isDead) context.fillStyle = 'black';
+            else context.fillStyle = 'rgb(240, 240, 240)';
+        } else {
+            if (!this.isDead) context.fillStyle = 'rgb(218,165,32)';
+            else context.fillStyle = 'rgb(240, 240, 240)';
+        }
+
         context.fill();
 
+        if (debug) {
+            for (const sensor of this.sensors) {
+                sensor.draw(context);
+            }
+        }
+
         // Triangle form
-        context.translate(this.x, this.y);
+        context.translate(this.position.x, this.position.y);
         context.rotate(this.rotation * Math.PI / 180);
 
         context.beginPath();
@@ -126,9 +220,12 @@ class Creature {
         context.fill();
 
         context.restore();
+
+
     }
 
     feed() {
-        this.score += 1;
+        this.food += this.maxFood / 2;
+        this.brain.fitness += 20;
     }
 }
